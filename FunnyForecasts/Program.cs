@@ -2,6 +2,6 @@
 
 var forecastService = new ForecastService();
 
-var data = await forecastService.GetRandomApiCall();
+var message = await forecastService.GetForecastNotification();
 
-Console.WriteLine(data);
+Console.WriteLine(message);
