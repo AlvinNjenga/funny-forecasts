@@ -2,6 +2,8 @@
 
 var forecastService = new ForecastService();
 
-var message = await forecastService.GetForecastNotification();
+var notification = await forecastService.BuildForecastNotification();
 
-Console.WriteLine(message);
+// NotificationService.SendSMS(notification);
+
+Console.WriteLine("Finished.");

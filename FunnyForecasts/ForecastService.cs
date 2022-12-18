@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Http;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace FunnyForecasts
@@ -13,8 +7,8 @@ namespace FunnyForecasts
     {
         HttpClient _httpClient { get; set; }
 
-        // TODO: Change this to use a different degrees thing?
         string WEATHER_API_URL { get; } = "https://api.openweathermap.org/data/2.5/forecast?q=London&appid=86241482320999b78584c5d6c9374679&cnt=5";
+        string JOKE_API_URL { get; } = "https://v2.jokeapi.dev/joke/Dark?blacklistFlags=racist&type=twopart&amount=1";
 
         List<string> RAIN_CONDITIONS = new List<string>() { "Thunderstorm", "Drizzle", "Rain" };
         List<string> FOG_CONDITIONS = new List<string>() { "Mist", "Fog" };
@@ -27,13 +21,15 @@ namespace FunnyForecasts
             _httpClient = new HttpClient();
         }
 
-        public async Task<string> GetRandomApiCall()
+        public async Task<string> BuildForecastNotification()
         {
-            var response = await _httpClient.GetAsync("https://official-joke-api.appspot.com/random_joke");
-            return await response.Content.ReadAsStringAsync();
+            var weatherForecast = await GetWeatherForecast();
+            var joke = await GetRandomJoke();
+
+            return weatherForecast + "\nHere's a joke: " + joke;
         }
         
-        public async Task<string> GetForecastNotification()
+        public async Task<string> GetWeatherForecast()
         {
             var response = await _httpClient.GetAsync(WEATHER_API_URL);
             var data = await response.Content.ReadAsStringAsync();
@@ -45,8 +41,6 @@ namespace FunnyForecasts
 
             foreach (var forecast in forecastData.list)
             {
-                Console.WriteLine(forecast.dt_txt);
-
                 var hourlyWeatherConditions = forecast.weather.Select(weatherCondition => new WeatherData()
                 {
                     main = weatherCondition.Value<string>("main"),
@@ -108,6 +102,20 @@ namespace FunnyForecasts
             };
         }
 
+        public async Task<string> GetRandomJoke()
+        {
+            var jokeMessage = "";
+            Joke randomJoke = JsonConvert.DeserializeObject<Joke>(await _httpClient.GetStringAsync(JOKE_API_URL));
+
+            if (randomJoke.joke != null)
+                jokeMessage = randomJoke.joke;
+            else
+                jokeMessage = randomJoke.setup + "\n" + randomJoke.delivery;
+
+            return jokeMessage;
+        }
+
+        // TODO: Change the class property names to be caps etc.
         public class ForecastData
         {
             public List<WeatherTimestamp> list { get; set; }
@@ -130,6 +138,15 @@ namespace FunnyForecasts
         {
             public string main { get; set; }
             public string description { get; set; }
+        }
+
+        public class Joke
+        {
+            public string type { get; set; }
+            public string joke { get; set; }
+            public string setup { get; set; }
+            public string delivery { get; set; }
+            public int id { get; set; }
         }
     }
 }
